@@ -1,0 +1,24 @@
+2024-12-03 03:48:33,312 - __main__ - INFO - Бот запущен
+2024-12-03 03:48:33,312 - aiogram.dispatcher - INFO - Start polling
+2024-12-03 03:48:34,028 - aiogram.dispatcher - INFO - Run polling for bot @den_call_bot id=7552534876 - 'den_call_bot'
+2024-12-03 03:48:46,122 - __main__ - INFO - Пользователь Мальцев Денис (1667948478) запустил бота
+2024-12-03 03:48:46,945 - aiogram.event - INFO - Update id=187546379 is handled. Duration 823 ms by bot id=7552534876
+2024-12-03 03:48:53,115 - __main__ - INFO - Пользователь 1667948478 открыл простой календарь
+2024-12-03 03:48:53,356 - aiogram.event - INFO - Update id=187546380 is handled. Duration 241 ms by bot id=7552534876
+2024-12-03 03:48:55,392 - aiogram.event - INFO - Update id=187546381 is handled. Duration 244 ms by bot id=7552534876
+2024-12-03 03:48:57,041 - aiogram.event - INFO - Update id=187546382 is handled. Duration 235 ms by bot id=7552534876
+2024-12-03 03:49:13,853 - aiogram.dispatcher - WARNING - Received SIGINT signal
+2024-12-03 03:49:13,853 - aiogram.dispatcher - INFO - Polling stopped for bot @den_call_bot id=7552534876 - 'den_call_bot'
+2024-12-03 03:49:13,854 - aiogram.dispatcher - INFO - Polling stopped
+2024-12-03 03:51:15,457 - __main__ - INFO - Бот запущен
+2024-12-03 03:51:15,458 - aiogram.dispatcher - INFO - Start polling
+2024-12-03 03:51:16,178 - aiogram.dispatcher - INFO - Run polling for bot @den_call_bot id=7552534876 - 'den_call_bot'
+2024-12-03 03:51:24,098 - __main__ - INFO - Пользователь Мальцев Денис (1667948478) запустил бота
+2024-12-03 03:51:24,914 - aiogram.event - INFO - Update id=187546383 is handled. Duration 816 ms by bot id=7552534876
+2024-12-03 03:51:33,328 - __main__ - INFO - Пользователь 1667948478 открыл простой календарь
+2024-12-03 03:51:33,527 - aiogram.event - INFO - Update id=187546384 is handled. Duration 199 ms by bot id=7552534876
+2024-12-03 03:51:36,726 - aiogram.event - INFO - Update id=187546385 is handled. Duration 367 ms by bot id=7552534876
+2024-12-03 03:51:38,356 - aiogram.event - INFO - Update id=187546386 is handled. Duration 198 ms by bot id=7552534876
+2024-12-03 03:51:39,960 - aiogram.event - INFO - Update id=187546387 is handled. Duration 216 ms by bot id=7552534876
+2024-12-03 03:51:41,446 - aiogram.event - INFO - Update id=187546388 is handled. Duration 212 ms by bot id=7552534876
+2024-12-03 03:51:43,296 - aiogram.event - INFO - Update id=187546389 is handled. Duration 223 ms by bot id=7552534876
