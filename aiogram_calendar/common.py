@@ -38,23 +38,18 @@ class GenericCalendar(BaseCalendar):
         super().__init__(locale)
         self._labels = CalendarLabels()
         
-        # Предопределенные названия дней недели и месяцев
-        DAYS_OF_WEEK = ['Пн', 'Вт', 'Ср', 'Чт', 'Пт', 'Сб', 'Вс']
-        MONTHS = ['Янв', 'Фев', 'Мар', 'Апр', 'Май', 'Июн', 
-                 'Июл', 'Авг', 'Сен', 'Окт', 'Ноя', 'Дек']
-        
-        # Используем предопределенные значения вместо системной локали
-        self._labels.days_of_week = DAYS_OF_WEEK
-        self._labels.months = MONTHS
+        # Используем переводы из локализации
+        self._labels.days_of_week = self.locale.TRANSLATIONS[self.locale.language]['days']
+        self._labels.months = self.locale.TRANSLATIONS[self.locale.language]['months']
 
         if cancel_btn:
             self._labels.cancel_caption = cancel_btn
         if today_btn:
             self._labels.today_caption = today_btn
 
+        self.show_alerts = show_alerts
         self.min_date = None
         self.max_date = None
-        self.show_alerts = show_alerts
 
     def set_dates_range(self, min_date: datetime, max_date: datetime):
         """Sets range of minimum & maximum dates"""

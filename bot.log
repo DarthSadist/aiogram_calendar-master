@@ -158,3 +158,12 @@
 2024-12-03 05:58:43,654 - aiogram.dispatcher - WARNING - Received SIGINT signal
 2024-12-03 05:58:43,655 - aiogram.dispatcher - INFO - Polling stopped for bot @den_call_bot id=7552534876 - 'den_call_bot'
 2024-12-03 05:58:43,655 - aiogram.dispatcher - INFO - Polling stopped
+2024-12-03 06:05:05,320 - __main__ - INFO - Бот запущен
+2024-12-03 06:05:05,321 - aiogram.dispatcher - INFO - Start polling
+2024-12-03 06:05:06,096 - aiogram.dispatcher - INFO - Run polling for bot @den_call_bot id=7552534876 - 'den_call_bot'
+2024-12-03 06:05:19,801 - aiogram.event - INFO - Update id=187546483 is handled. Duration 845 ms by bot id=7552534876
+2024-12-03 06:05:21,590 - aiogram.event - INFO - Update id=187546484 is not handled. Duration 10 ms by bot id=7552534876
+2024-12-03 06:05:27,285 - aiogram.event - INFO - Update id=187546485 is not handled. Duration 5 ms by bot id=7552534876
+2024-12-03 06:07:39,307 - aiogram.dispatcher - WARNING - Received SIGINT signal
+2024-12-03 06:07:39,313 - aiogram.dispatcher - INFO - Polling stopped for bot @den_call_bot id=7552534876 - 'den_call_bot'
+2024-12-03 06:07:39,314 - aiogram.dispatcher - INFO - Polling stopped

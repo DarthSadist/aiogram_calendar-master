@@ -1,57 +1,42 @@
+from datetime import datetime
 import logging
-import asyncio
 import sys
-from datetime import datetime, timedelta
-from typing import Optional, Tuple
+import asyncio
+from typing import Dict
 
-import locale
-from logging.handlers import RotatingFileHandler
-
-from aiogram_calendar import SimpleCalendar, SimpleCalendarCallback, DialogCalendar, DialogCalendarCallback
 from aiogram import Bot, Dispatcher, F
-from aiogram.enums import ParseMode
 from aiogram.filters import Command
-from aiogram.filters.callback_data import CallbackData
-from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
-from aiogram.utils.markdown import hbold
-from aiogram.client.default import DefaultBotProperties
-from aiogram_calendar.localization import Localization
+from aiogram.types import (
+    KeyboardButton,
+    Message,
+    ReplyKeyboardMarkup,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
+    CallbackQuery
+)
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+from aiogram_calendar import SimpleCalendar, DialogCalendar
+from aiogram_calendar.simple_calendar import SimpleCalendarCallback
+from aiogram_calendar.dialog_calendar import DialogCalendarCallback
 
 from bot_config import API_TOKEN
 
-# Настройка логирования
-def setup_logging() -> None:
-    """Настройка системы логирования"""
-    log_format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    logging.basicConfig(
-        level=logging.INFO,
-        format=log_format,
-        handlers=[
-            RotatingFileHandler(
-                "bot.log",
-                maxBytes=10485760,  # 10MB
-                backupCount=5,
-                encoding="utf-8"
-            ),
-            logging.StreamHandler(sys.stdout)
-        ]
-    )
-
-# Инициализация логгера
+# Enable logging
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+)
 logger = logging.getLogger(__name__)
 
-try:
-    locale.setlocale(locale.LC_ALL, 'ru_RU.utf8')
-except locale.Error as e:
-    logger.warning(f"Не удалось установить русскую локаль: {e}")
-
-# Инициализация диспетчера
+# Initialize bot and dispatcher
+bot = Bot(token=API_TOKEN)
 dp = Dispatcher()
 
-# Хранилище настроек пользователей
-user_settings = {}
+# Dictionary to store user settings
+user_settings: Dict[int, 'UserSettings'] = {}
 
-# Константы для форматов дат
+# Available date formats
 DATE_FORMATS = {
     'dd.mm.yyyy': '%d.%m.%Y',
     'yyyy-mm-dd': '%Y-%m-%d',
@@ -488,7 +473,7 @@ async def today_handler(message: Message) -> None:
 async def tomorrow_handler(message: Message) -> None:
     """Обработчик выбора завтрашней даты"""
     try:
-        tomorrow = datetime.now() + timedelta(days=1)
+        tomorrow = datetime.now() + datetime.timedelta(days=1)
         await message.answer(
             f"✅ Выбрана дата:\n\n{QuickDates.get_date_description(tomorrow)}\n\n"
             f"📝 Можете выбрать другую дату или вернуться в главное меню",
@@ -502,7 +487,7 @@ async def tomorrow_handler(message: Message) -> None:
 async def next_week_handler(message: Message) -> None:
     """Обработчик выбора даты через неделю"""
     try:
-        next_week = datetime.now() + timedelta(days=7)
+        next_week = datetime.now() + datetime.timedelta(days=7)
         await message.answer(
             f"✅ Выбрана дата:\n\n{QuickDates.get_date_description(next_week)}\n\n"
             f"📝 Можете выбрать другую дату или вернуться в главное меню",
@@ -516,7 +501,7 @@ async def next_week_handler(message: Message) -> None:
 async def two_weeks_handler(message: Message) -> None:
     """Обработчик выбора даты через 2 недели"""
     try:
-        two_weeks = datetime.now() + timedelta(days=14)
+        two_weeks = datetime.now() + datetime.timedelta(days=14)
         await message.answer(
             f"✅ Выбрана дата:\n\n{QuickDates.get_date_description(two_weeks)}\n\n"
             f"📝 Можете выбрать другую дату или вернуться в главное меню",
@@ -530,7 +515,7 @@ async def two_weeks_handler(message: Message) -> None:
 async def next_month_handler(message: Message) -> None:
     """Обработчик выбора даты через месяц"""
     try:
-        next_month = datetime.now() + timedelta(days=30)
+        next_month = datetime.now() + datetime.timedelta(days=30)
         await message.answer(
             f"✅ Выбрана дата:\n\n{QuickDates.get_date_description(next_month)}\n\n"
             f"📝 Можете выбрать другую дату или вернуться в главное меню",
@@ -544,7 +529,7 @@ async def next_month_handler(message: Message) -> None:
 async def three_months_handler(message: Message) -> None:
     """Обработчик выбора даты через 3 месяца"""
     try:
-        three_months = datetime.now() + timedelta(days=90)
+        three_months = datetime.now() + datetime.timedelta(days=90)
         await message.answer(
             f"✅ Выбрана дата:\n\n{QuickDates.get_date_description(three_months)}\n\n"
             f"📝 Можете выбрать другую дату или вернуться в главное меню",
@@ -578,7 +563,7 @@ async def end_of_month_handler(message: Message) -> None:
         if today.month == 12:
             last_day = today.replace(day=31)
         else:
-            last_day = today.replace(month=today.month + 1, day=1) - timedelta(days=1)
+            last_day = today.replace(month=today.month + 1, day=1) - datetime.timedelta(days=1)
         
         await message.answer(
             f"✅ Выбрана дата:\n\n{QuickDates.get_date_description(last_day)}\n\n"
@@ -794,167 +779,137 @@ async def process_back_to_settings(callback_query: CallbackQuery):
         )
         await callback_query.message.answer(error_text)
 
-@dp.message(F.text == "📅 Simple Calendar", F.text == "📅 Простой календарь")
+@dp.message(F.text.in_(["📅 Simple Calendar", "📅 Простой календарь"]))
 async def nav_cal_handler(message: Message) -> None:
-    """
-    Обработчик для простого календаря
-    
-    Args:
-        message (Message): Входящее сообщение
-    """
+    """Обработчик простого календаря"""
     try:
         user_id = message.from_user.id
-        user_lang = user_settings.get(user_id, UserSettings()).language
+        if user_id not in user_settings:
+            user_settings[user_id] = UserSettings()
         
-        calendar = SimpleCalendar(locale=user_lang)
+        user_lang = user_settings[user_id].language
+        calendar_text = (
+            "📅 Simple Calendar\nSelect a date:" if user_lang == 'en'
+            else "📅 Простой календарь\nВыберите дату:"
+        )
+        
+        # Создаем календарь с указанным языком и кнопками
+        calendar = SimpleCalendar(
+            locale=user_lang,
+            show_alerts=True
+        )
         await message.answer(
-            "📅 Выберите дату:" if user_lang == 'ru' else "📆 Select a date:",
+            calendar_text,
             reply_markup=await calendar.start_calendar()
         )
     except Exception as e:
         logger.error(f"Ошибка в обработчике простого календаря: {e}")
-        await message.answer("❌ Произошла ошибка. Пожалуйста, попробуйте позже.")
-
-@dp.message(F.text == "📆 Extended Calendar", F.text == "📆 Расширенный календарь")
-async def nav_cal_handler_date(message: Message) -> None:
-    """
-    Обработчик для календаря с выбором месяца
-    
-    Args:
-        message (Message): Входящее сообщение
-    """
-    try:
-        calendar = SimpleCalendar()
-        calendar.set_dates_range(datetime(2022, 1, 1), datetime(2025, 12, 31))
-        logger.info(f"Пользователь {message.from_user.id} открыл календарь с выбором месяца")
-        
-        await message.answer(
-            "📆 Календарь открыт на текущий месяц\n"
-            "✨ Выберите любую дату с 2022 по 2025 год:",
-            reply_markup=await calendar.start_calendar(year=2024, month=2)
+        error_text = (
+            "❌ An error occurred. Please try again later." if user_lang == 'en'
+            else "❌ Произошла ошибка. Пожалуйста, попробуйте позже."
         )
-    except Exception as e:
-        logger.error(f"Ошибка при создании календаря с выбором месяца: {e}")
-        await message.answer("❌ Не удалось создать календарь. Попробуйте позже.")
+        await message.answer(error_text)
 
-@dp.callback_query(SimpleCalendarCallback.filter())
-async def process_simple_calendar(callback_query: CallbackQuery, callback_data: CallbackData) -> None:
-    """
-    Обработчик callback-запросов для простого календаря
-    
-    Args:
-        callback_query (CallbackQuery): Callback-запрос
-        callback_data (CallbackData): Данные callback-запроса
-    """
-    try:
-        calendar = SimpleCalendar(show_alerts=True)
-        calendar.set_dates_range(datetime(2022, 1, 1), datetime(2025, 12, 31))
-
-        selected, date = await calendar.process_selection(callback_query, callback_data)
-        if selected:
-            logger.info(f"Пользователь {callback_query.from_user.id} выбрал дату: {date}")
-            await callback_query.message.answer(
-                f'✅ Выбрана дата: {date.strftime("%d.%m.%Y")}\n'
-                f'📝 Можете выбрать другую дату или вернуться в главное меню'
-            )
-    except Exception as e:
-        logger.error(f"Ошибка при обработке выбора даты: {e}")
-        await callback_query.message.answer("❌ Произошла ошибка при выборе даты.")
-
-@dp.message(F.text == "🗓 Dialog Calendar", F.text == "🗓 Диалоговый календарь")
+@dp.message(F.text.in_(["📅 Dialog Calendar", "📅 Диалоговый календарь"]))
 async def dialog_cal_handler(message: Message) -> None:
-    """
-    Обработчик для диалогового календаря
-    
-    Args:
-        message (Message): Входящее сообщение
-    """
+    """Обработчик диалогового календаря"""
     try:
         user_id = message.from_user.id
-        user_lang = user_settings.get(user_id, UserSettings()).language
+        if user_id not in user_settings:
+            user_settings[user_id] = UserSettings()
         
-        calendar = DialogCalendar(locale=user_lang)
+        user_lang = user_settings[user_id].language
+        calendar_text = (
+            "📅 Dialog Calendar\nSelect a year:" if user_lang == 'en'
+            else "📅 Диалоговый календарь\nВыберите год:"
+        )
+        
+        # Создаем календарь с указанным языком и кнопками
+        calendar = DialogCalendar(
+            locale=user_lang,
+            show_alerts=True
+        )
         await message.answer(
-            "📆 Выберите дату:" if user_lang == 'ru' else "📆 Select a date:",
+            calendar_text,
             reply_markup=await calendar.start_calendar()
         )
     except Exception as e:
         logger.error(f"Ошибка в обработчике диалогового календаря: {e}")
-        await message.answer("❌ Не удалось создать календарь. Попробуйте позже.")
-
-@dp.message(F.text == "📊 Calendar with Year", F.text == "📊 Календарь с годом")
-async def dialog_cal_handler_year(message: Message) -> None:
-    """
-    Обработчик для диалогового календаря с указанным годом
-    
-    Args:
-        message (Message): Входящее сообщение
-    """
-    try:
-        logger.info(f"Пользователь {message.from_user.id} открыл диалоговый календарь с годом")
-        await message.answer(
-            "📊 Выберите дату, начиная с 1989 года:\n"
-            "1️⃣ Выберите год (с 1989)\n"
-            "2️⃣ Выберите месяц\n"
-            "3️⃣ Выберите день",
-            reply_markup=await DialogCalendar().start_calendar(year=1989)
+        error_text = (
+            "❌ An error occurred. Please try again later." if user_lang == 'en'
+            else "❌ Произошла ошибка. Пожалуйста, попробуйте позже."
         )
-    except Exception as e:
-        logger.error(f"Ошибка при создании диалогового календаря с годом: {e}")
-        await message.answer("❌ Не удалось создать календарь. Попробуйте позже.")
+        await message.answer(error_text)
 
-@dp.message(F.text == "📋 Calendar with Month", F.text == "📋 Календарь с месяцем")
-async def dialog_cal_handler_month(message: Message) -> None:
-    """
-    Обработчик для диалогового календаря с указанным месяцем
-    
-    Args:
-        message (Message): Входящее сообщение
-    """
+@dp.callback_query(SimpleCalendarCallback.filter())
+async def process_simple_calendar(callback_query: CallbackQuery, callback_data: dict):
+    """Обработчик простого календаря"""
     try:
-        logger.info(f"Пользователь {message.from_user.id} открыл диалоговый календарь с месяцем")
-        await message.answer(
-            "📋 Выберите дату, начиная с июня 1989:\n"
-            "1️⃣ Выберите год (с 1989)\n"
-            "2️⃣ Выберите месяц (начиная с июня)\n"
-            "3️⃣ Выберите день",
-            reply_markup=await DialogCalendar().start_calendar(year=1989, month=6)
+        user_id = callback_query.from_user.id
+        if user_id not in user_settings:
+            user_settings[user_id] = UserSettings()
+        
+        user_lang = user_settings[user_id].language
+        # Создаем календарь с указанным языком и кнопками
+        calendar = SimpleCalendar(
+            locale=user_lang,
+            show_alerts=True
         )
+        selected, date = await calendar.process_selection(callback_query, callback_data)
+        
+        if selected:
+            date_format = user_settings[user_id].date_format
+            formatted_date = date.strftime(DATE_FORMATS[date_format])
+            success_text = (
+                f"✅ You selected: {formatted_date}" if user_lang == 'en'
+                else f"✅ Вы выбрали: {formatted_date}"
+            )
+            await callback_query.message.answer(success_text)
     except Exception as e:
-        logger.error(f"Ошибка при создании диалогового календаря с месяцем: {e}")
-        await message.answer("❌ Не удалось создать календарь. Попробуйте позже.")
+        logger.error(f"Ошибка в обработчике выбора даты (простой календарь): {e}")
+        error_text = (
+            "❌ An error occurred. Please try again later." if user_lang == 'en'
+            else "❌ Произошла ошибка. Пожалуйста, попробуйте позже."
+        )
+        await callback_query.message.answer(error_text)
 
 @dp.callback_query(DialogCalendarCallback.filter())
-async def process_dialog_calendar(callback_query: CallbackQuery, callback_data: CallbackData) -> None:
-    """
-    Обработчик callback-запросов для диалогового календаря
-    
-    Args:
-        callback_query (CallbackQuery): Callback-запрос
-        callback_data (CallbackData): Данные callback-запроса
-    """
+async def process_dialog_calendar(callback_query: CallbackQuery, callback_data: dict):
+    """Обработчик диалогового календаря"""
     try:
-        selected, date = await DialogCalendar().process_selection(callback_query, callback_data)
+        user_id = callback_query.from_user.id
+        if user_id not in user_settings:
+            user_settings[user_id] = UserSettings()
+        
+        user_lang = user_settings[user_id].language
+        # Создаем календарь с указанным языком и кнопками
+        calendar = DialogCalendar(
+            locale=user_lang,
+            show_alerts=True
+        )
+        selected, date = await calendar.process_selection(callback_query, callback_data)
+        
         if selected:
-            logger.info(f"Пользователь {callback_query.from_user.id} выбрал дату: {date}")
-            await callback_query.message.answer(
-                f'✅ Выбрана дата: {date.strftime("%d.%m.%Y")}\n'
-                f'📝 Можете выбрать другую дату или вернуться в главное меню'
+            date_format = user_settings[user_id].date_format
+            formatted_date = date.strftime(DATE_FORMATS[date_format])
+            success_text = (
+                f"✅ You selected: {formatted_date}" if user_lang == 'en'
+                else f"✅ Вы выбрали: {formatted_date}"
             )
+            await callback_query.message.answer(success_text)
     except Exception as e:
-        logger.error(f"Ошибка при обработке выбора даты: {e}")
-        await callback_query.message.answer("❌ Произошла ошибка при выборе даты.")
+        logger.error(f"Ошибка в обработчике выбора даты (диалоговый календарь): {e}")
+        error_text = (
+            "❌ An error occurred. Please try again later." if user_lang == 'en'
+            else "❌ Произошла ошибка. Пожалуйста, попробуйте позже."
+        )
+        await callback_query.message.answer(error_text)
 
 async def main() -> None:
     """
     Основная функция запуска бота
     """
     try:
-        # Инициализация бота с настройками по умолчанию
-        bot = Bot(API_TOKEN, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
-        
-        logger.info("Бот запущен")
-        
         # Запуск процесса обработки событий
         await dp.start_polling(bot)
     except Exception as e:
@@ -962,5 +917,4 @@ async def main() -> None:
         sys.exit(1)
 
 if __name__ == "__main__":
-    setup_logging()
     asyncio.run(main())
