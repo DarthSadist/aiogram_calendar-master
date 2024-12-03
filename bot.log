@@ -22,3 +22,47 @@
 2024-12-03 03:51:39,960 - aiogram.event - INFO - Update id=187546387 is handled. Duration 216 ms by bot id=7552534876
 2024-12-03 03:51:41,446 - aiogram.event - INFO - Update id=187546388 is handled. Duration 212 ms by bot id=7552534876
 2024-12-03 03:51:43,296 - aiogram.event - INFO - Update id=187546389 is handled. Duration 223 ms by bot id=7552534876
+2024-12-03 04:08:04,243 - aiogram.dispatcher - WARNING - Received SIGINT signal
+2024-12-03 04:08:04,245 - aiogram.dispatcher - INFO - Polling stopped for bot @den_call_bot id=7552534876 - 'den_call_bot'
+2024-12-03 04:08:04,245 - aiogram.dispatcher - INFO - Polling stopped
+2024-12-03 04:10:32,220 - __main__ - INFO - Бот запущен
+2024-12-03 04:10:32,220 - aiogram.dispatcher - INFO - Start polling
+2024-12-03 04:10:32,941 - aiogram.dispatcher - INFO - Run polling for bot @den_call_bot id=7552534876 - 'den_call_bot'
+2024-12-03 04:10:38,232 - __main__ - INFO - Пользователь Мальцев Денис (1667948478) запустил бота
+2024-12-03 04:10:39,084 - aiogram.event - INFO - Update id=187546390 is handled. Duration 852 ms by bot id=7552534876
+2024-12-03 04:10:43,497 - aiogram.event - INFO - Update id=187546391 is handled. Duration 220 ms by bot id=7552534876
+2024-12-03 04:10:55,381 - aiogram.event - INFO - Update id=187546392 is not handled. Duration 3 ms by bot id=7552534876
+2024-12-03 04:11:14,751 - aiogram.event - INFO - Update id=187546393 is not handled. Duration 3 ms by bot id=7552534876
+2024-12-03 04:11:27,616 - __main__ - INFO - Пользователь Мальцев Денис (1667948478) запустил бота
+2024-12-03 04:11:28,227 - aiogram.event - INFO - Update id=187546394 is handled. Duration 610 ms by bot id=7552534876
+2024-12-03 04:11:30,040 - aiogram.event - INFO - Update id=187546395 is not handled. Duration 11 ms by bot id=7552534876
+2024-12-03 04:13:14,876 - aiogram.dispatcher - WARNING - Received SIGINT signal
+2024-12-03 04:13:14,878 - aiogram.dispatcher - INFO - Polling stopped for bot @den_call_bot id=7552534876 - 'den_call_bot'
+2024-12-03 04:13:14,878 - aiogram.dispatcher - INFO - Polling stopped
+2024-12-03 04:18:56,589 - __main__ - INFO - Бот запущен
+2024-12-03 04:18:56,590 - aiogram.dispatcher - INFO - Start polling
+2024-12-03 04:18:57,306 - aiogram.dispatcher - INFO - Run polling for bot @den_call_bot id=7552534876 - 'den_call_bot'
+2024-12-03 04:19:01,664 - __main__ - INFO - Пользователь Мальцев Денис (1667948478) запустил бота
+2024-12-03 04:19:02,483 - aiogram.event - INFO - Update id=187546396 is handled. Duration 818 ms by bot id=7552534876
+2024-12-03 04:19:04,779 - aiogram.event - INFO - Update id=187546397 is handled. Duration 191 ms by bot id=7552534876
+2024-12-03 04:19:07,133 - aiogram.event - INFO - Update id=187546398 is handled. Duration 234 ms by bot id=7552534876
+2024-12-03 04:19:13,977 - aiogram.event - INFO - Update id=187546399 is handled. Duration 230 ms by bot id=7552534876
+2024-12-03 04:19:15,735 - aiogram.event - INFO - Update id=187546400 is handled. Duration 186 ms by bot id=7552534876
+2024-12-03 04:19:17,952 - aiogram.event - INFO - Update id=187546401 is handled. Duration 274 ms by bot id=7552534876
+2024-12-03 04:19:22,730 - aiogram.event - INFO - Update id=187546402 is handled. Duration 405 ms by bot id=7552534876
+2024-12-03 04:19:27,244 - __main__ - INFO - Пользователь 1667948478 открыл простой календарь
+2024-12-03 04:19:27,465 - aiogram.event - INFO - Update id=187546403 is handled. Duration 223 ms by bot id=7552534876
+2024-12-03 04:19:34,790 - aiogram.event - INFO - Update id=187546404 is handled. Duration 190 ms by bot id=7552534876
+2024-12-03 04:19:46,013 - aiogram.event - INFO - Update id=187546405 is not handled. Duration 2 ms by bot id=7552534876
+2024-12-03 04:20:06,060 - aiogram.dispatcher - WARNING - Received SIGINT signal
+2024-12-03 04:20:06,061 - aiogram.dispatcher - INFO - Polling stopped for bot @den_call_bot id=7552534876 - 'den_call_bot'
+2024-12-03 04:20:06,061 - aiogram.dispatcher - INFO - Polling stopped
+2024-12-03 04:26:05,907 - __main__ - INFO - Бот запущен
+2024-12-03 04:26:05,908 - aiogram.dispatcher - INFO - Start polling
+2024-12-03 04:26:06,668 - aiogram.dispatcher - INFO - Run polling for bot @den_call_bot id=7552534876 - 'den_call_bot'
+2024-12-03 04:26:19,559 - __main__ - INFO - Пользователь Мальцев Денис (1667948478) запустил бота
+2024-12-03 04:26:20,352 - aiogram.event - INFO - Update id=187546406 is handled. Duration 793 ms by bot id=7552534876
+2024-12-03 04:26:23,952 - aiogram.event - INFO - Update id=187546407 is handled. Duration 204 ms by bot id=7552534876
+2024-12-03 04:26:27,482 - aiogram.event - INFO - Update id=187546408 is handled. Duration 240 ms by bot id=7552534876
+2024-12-03 04:26:32,853 - aiogram.event - INFO - Update id=187546409 is handled. Duration 188 ms by bot id=7552534876
+2024-12-03 04:26:40,505 - aiogram.event - INFO - Update id=187546410 is handled. Duration 227 ms by bot id=7552534876
