@@ -5,7 +5,7 @@ from aiogram.types import User
 from datetime import datetime
 
 from .schemas import CalendarLabels
-
+from .localization import Localization
 
 async def get_user_locale(from_user: User) -> str:
     "Returns user locale in format en_US, accepts User instance from Message, CallbackData etc"
@@ -13,7 +13,12 @@ async def get_user_locale(from_user: User) -> str:
     return locale.locale_alias[loc].split(".")[0]
 
 
-class GenericCalendar:
+class BaseCalendar:
+    def __init__(self, locale: str = 'en'):
+        self.locale = Localization(locale)
+
+
+class GenericCalendar(BaseCalendar):
 
     def __init__(
         self,
@@ -30,6 +35,7 @@ class GenericCalendar:
         today_btn (str): label for button Today to set calendar back to todays date
         show_alerts (bool): defines how the date range error would shown (defaults to False)
         """
+        super().__init__(locale)
         self._labels = CalendarLabels()
         
         # Предопределенные названия дней недели и месяцев

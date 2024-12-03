@@ -15,6 +15,7 @@ from aiogram.filters.callback_data import CallbackData
 from aiogram.types import Message, ReplyKeyboardMarkup, KeyboardButton, CallbackQuery, InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.markdown import hbold
 from aiogram.client.default import DefaultBotProperties
+from aiogram_calendar.localization import Localization
 
 from bot_config import API_TOKEN
 
@@ -47,118 +48,235 @@ except locale.Error as e:
 # Инициализация диспетчера
 dp = Dispatcher()
 
-# Клавиатура с календарями
-class CalendarKeyboards:
-    """Класс для управления клавиатурами календаря"""
-    
-    @staticmethod
-    def get_start_keyboard() -> ReplyKeyboardMarkup:
-        """Создает и возвращает стартовую клавиатуру"""
-        kb = [
-            [
-                KeyboardButton(text='📅 Простой календарь'),
-                KeyboardButton(text='📆 Расширенный календарь'),
-            ],
-            [
-                KeyboardButton(text='🗓 Диалоговый календарь'),
-                KeyboardButton(text='📊 Календарь с годом'),
-            ],
-            [
-                KeyboardButton(text='⚡️ Быстрые даты'),
-                KeyboardButton(text='⚙️ Настройки')
-            ]
-        ]
-        return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
+# Хранилище настроек пользователей
+user_settings = {}
 
-    @staticmethod
-    def get_quick_dates_keyboard() -> ReplyKeyboardMarkup:
-        """Создает клавиатуру быстрых дат"""
-        kb = [
-            [
-                KeyboardButton(text='📌 Сегодня'),
-                KeyboardButton(text='📌 Завтра')
-            ],
-            [
-                KeyboardButton(text='📌 Через неделю'),
-                KeyboardButton(text='📌 Через 2 недели')
-            ],
-            [
-                KeyboardButton(text='📌 Через месяц'),
-                KeyboardButton(text='📌 Через 3 месяца')
-            ],
-            [
-                KeyboardButton(text='📌 Начало месяца'),
-                KeyboardButton(text='📌 Конец месяца')
-            ],
-            [
-                KeyboardButton(text='🔙 Вернуться в главное меню')
-            ]
-        ]
-        return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
+# Константы для форматов дат
+DATE_FORMATS = {
+    'dd.mm.yyyy': '%d.%m.%Y',
+    'yyyy-mm-dd': '%Y-%m-%d',
+    'mm/dd/yyyy': '%m/%d/%Y'
+}
 
-# Добавляем класс для работы с настройками
 class UserSettings:
     """Класс для управления настройками пользователя"""
-    
-    DATE_FORMATS = {
-        "DD.MM.YYYY": "%d.%m.%Y",
-        "YYYY-MM-DD": "%Y-%m-%d",
-        "MM/DD/YYYY": "%m/%d/%Y"
-    }
+    def __init__(self):
+        self.language = 'ru'  # Язык по умолчанию
+        self.date_format = 'dd.mm.yyyy'  # Формат даты по умолчанию
 
     @staticmethod
-    def get_settings_keyboard() -> InlineKeyboardMarkup:
-        """Создает клавиатуру настроек"""
-        keyboard = [
+    def get_language_keyboard() -> InlineKeyboardMarkup:
+        """Создает клавиатуру выбора языка"""
+        kb = InlineKeyboardMarkup(inline_keyboard=[
             [
-                InlineKeyboardButton(text="🌍 Изменить язык", callback_data="settings_language"),
-                InlineKeyboardButton(text="📅 Формат даты", callback_data="settings_date_format")
+                InlineKeyboardButton(text='🇷🇺 Русский', callback_data='lang_ru'),
+                InlineKeyboardButton(text='🇬🇧 English', callback_data='lang_en')
             ],
-            [
-                InlineKeyboardButton(text="🔙 Вернуться в главное меню", callback_data="back_to_main")
-            ]
-        ]
-        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+            [InlineKeyboardButton(text='🔙 Назад/Back', callback_data='back_to_settings')]
+        ])
+        return kb
+
+    def get_settings_keyboard(self) -> InlineKeyboardMarkup:
+        """Создает клавиатуру настроек"""
+        if self.language == 'en':
+            kb = InlineKeyboardMarkup(inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text=f'🌐 Language: {"English" if self.language == "en" else "Russian"}',
+                        callback_data='change_language'
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text=f'📅 Date format: {self.date_format}',
+                        callback_data='change_date_format'
+                    )
+                ],
+                [InlineKeyboardButton(text='🔙 Back to Main Menu', callback_data='back_to_main')]
+            ])
+        else:
+            kb = InlineKeyboardMarkup(inline_keyboard=[
+                [
+                    InlineKeyboardButton(
+                        text=f'🌐 Язык: {"Английский" if self.language == "en" else "Русский"}',
+                        callback_data='change_language'
+                    )
+                ],
+                [
+                    InlineKeyboardButton(
+                        text=f'📅 Формат даты: {self.date_format}',
+                        callback_data='change_date_format'
+                    )
+                ],
+                [InlineKeyboardButton(text='🔙 В главное меню', callback_data='back_to_main')]
+            ])
+        return kb
+
+    def get_date_format_keyboard(self) -> InlineKeyboardMarkup:
+        """Создает клавиатуру выбора формата даты"""
+        if self.language == 'en':
+            kb = InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="DD.MM.YYYY", callback_data="date_format_dd.mm.yyyy")],
+                [InlineKeyboardButton(text="YYYY-MM-DD", callback_data="date_format_yyyy-mm-dd")],
+                [InlineKeyboardButton(text="MM/DD/YYYY", callback_data="date_format_mm/dd/yyyy")],
+                [InlineKeyboardButton(text='🔙 Back', callback_data='back_to_settings')]
+            ])
+        else:
+            kb = InlineKeyboardMarkup(inline_keyboard=[
+                [InlineKeyboardButton(text="ДД.ММ.ГГГГ", callback_data="date_format_dd.mm.yyyy")],
+                [InlineKeyboardButton(text="ГГГГ-ММ-ДД", callback_data="date_format_yyyy-mm-dd")],
+                [InlineKeyboardButton(text="ММ/ДД/ГГГГ", callback_data="date_format_mm/dd/yyyy")],
+                [InlineKeyboardButton(text='🔙 Назад', callback_data='back_to_settings')]
+            ])
+        return kb
+
+class CalendarKeyboards:
+    """Класс для создания клавиатур календаря"""
+    @staticmethod
+    def get_start_keyboard(language: str = 'ru') -> ReplyKeyboardMarkup:
+        """Создает стартовую клавиатуру"""
+        if language == 'en':
+            kb = ReplyKeyboardMarkup(
+                keyboard=[
+                    [
+                        KeyboardButton(text="📅 Simple Calendar"),
+                        KeyboardButton(text="📅 Dialog Calendar")
+                    ],
+                    [
+                        KeyboardButton(text="⚡️ Quick Dates"),
+                        KeyboardButton(text="⚙️ Settings")
+                    ]
+                ],
+                resize_keyboard=True
+            )
+        else:
+            kb = ReplyKeyboardMarkup(
+                keyboard=[
+                    [
+                        KeyboardButton(text="📅 Простой календарь"),
+                        KeyboardButton(text="📅 Диалоговый календарь")
+                    ],
+                    [
+                        KeyboardButton(text="⚡️ Быстрые даты"),
+                        KeyboardButton(text="⚙️ Настройки")
+                    ]
+                ],
+                resize_keyboard=True
+            )
+        return kb
 
     @staticmethod
-    def get_date_format_keyboard() -> InlineKeyboardMarkup:
-        """Создает клавиатуру выбора формата даты"""
-        keyboard = [
-            [InlineKeyboardButton(text="DD.MM.YYYY", callback_data="date_format_dd.mm.yyyy")],
-            [InlineKeyboardButton(text="YYYY-MM-DD", callback_data="date_format_yyyy-mm-dd")],
-            [InlineKeyboardButton(text="MM/DD/YYYY", callback_data="date_format_mm/dd/yyyy")],
-            [InlineKeyboardButton(text="🔙 Назад", callback_data="back_to_settings")]
-        ]
-        return InlineKeyboardMarkup(inline_keyboard=keyboard)
+    def get_quick_dates_keyboard(language: str = 'ru') -> ReplyKeyboardMarkup:
+        """Создает клавиатуру быстрых дат"""
+        if language == 'en':
+            kb = ReplyKeyboardMarkup(
+                keyboard=[
+                    [
+                        KeyboardButton(text='📌 Today'),
+                        KeyboardButton(text='📌 Tomorrow')
+                    ],
+                    [
+                        KeyboardButton(text='📌 Next Week'),
+                        KeyboardButton(text='📌 In 2 Weeks')
+                    ],
+                    [
+                        KeyboardButton(text='📌 Next Month'),
+                        KeyboardButton(text='📌 In 3 Months')
+                    ],
+                    [
+                        KeyboardButton(text='📌 Start of Month'),
+                        KeyboardButton(text='📌 End of Month')
+                    ],
+                    [
+                        KeyboardButton(text='🔙 Back to Main Menu')
+                    ]
+                ],
+                resize_keyboard=True
+            )
+        else:
+            kb = ReplyKeyboardMarkup(
+                keyboard=[
+                    [
+                        KeyboardButton(text='📌 Сегодня'),
+                        KeyboardButton(text='📌 Завтра')
+                    ],
+                    [
+                        KeyboardButton(text='📌 Через неделю'),
+                        KeyboardButton(text='📌 Через 2 недели')
+                    ],
+                    [
+                        KeyboardButton(text='📌 Через месяц'),
+                        KeyboardButton(text='📌 Через 3 месяца')
+                    ],
+                    [
+                        KeyboardButton(text='📌 Начало месяца'),
+                        KeyboardButton(text='📌 Конец месяца')
+                    ],
+                    [
+                        KeyboardButton(text='🔙 Вернуться в главное меню')
+                    ]
+                ],
+                resize_keyboard=True
+            )
+        return kb
 
 class QuickDates:
     """Класс для работы с быстрыми датами"""
 
     @staticmethod
-    def get_quick_dates_keyboard() -> ReplyKeyboardMarkup:
+    def get_quick_dates_keyboard(language: str = 'ru') -> ReplyKeyboardMarkup:
         """Создает клавиатуру быстрых дат"""
-        kb = [
-            [
-                KeyboardButton(text='📌 Сегодня'),
-                KeyboardButton(text='📌 Завтра')
-            ],
-            [
-                KeyboardButton(text='📌 Через неделю'),
-                KeyboardButton(text='📌 Через 2 недели')
-            ],
-            [
-                KeyboardButton(text='📌 Через месяц'),
-                KeyboardButton(text='📌 Через 3 месяца')
-            ],
-            [
-                KeyboardButton(text='📌 Начало месяца'),
-                KeyboardButton(text='📌 Конец месяца')
-            ],
-            [
-                KeyboardButton(text='🔙 Вернуться в главное меню')
-            ]
-        ]
-        return ReplyKeyboardMarkup(keyboard=kb, resize_keyboard=True)
+        if language == 'en':
+            kb = ReplyKeyboardMarkup(
+                keyboard=[
+                    [
+                        KeyboardButton(text='📌 Today'),
+                        KeyboardButton(text='📌 Tomorrow')
+                    ],
+                    [
+                        KeyboardButton(text='📌 Next Week'),
+                        KeyboardButton(text='📌 In 2 Weeks')
+                    ],
+                    [
+                        KeyboardButton(text='📌 Next Month'),
+                        KeyboardButton(text='📌 In 3 Months')
+                    ],
+                    [
+                        KeyboardButton(text='📌 Start of Month'),
+                        KeyboardButton(text='📌 End of Month')
+                    ],
+                    [
+                        KeyboardButton(text='🔙 Back to Main Menu')
+                    ]
+                ],
+                resize_keyboard=True
+            )
+        else:
+            kb = ReplyKeyboardMarkup(
+                keyboard=[
+                    [
+                        KeyboardButton(text='📌 Сегодня'),
+                        KeyboardButton(text='📌 Завтра')
+                    ],
+                    [
+                        KeyboardButton(text='📌 Через неделю'),
+                        KeyboardButton(text='📌 Через 2 недели')
+                    ],
+                    [
+                        KeyboardButton(text='📌 Через месяц'),
+                        KeyboardButton(text='📌 Через 3 месяца')
+                    ],
+                    [
+                        KeyboardButton(text='📌 Начало месяца'),
+                        KeyboardButton(text='📌 Конец месяца')
+                    ],
+                    [
+                        KeyboardButton(text='🔙 Вернуться в главное меню')
+                    ]
+                ],
+                resize_keyboard=True
+            )
+        return kb
 
     @staticmethod
     def get_date_description(date: datetime) -> str:
@@ -194,49 +312,79 @@ start_kb = CalendarKeyboards.get_start_keyboard()
 quick_dates_kb = QuickDates.get_quick_dates_keyboard()
 
 @dp.message(Command("start"))
-async def command_start_handler(message: Message) -> None:
-    """Обработчик команды /start"""
+async def cmd_start(message: Message) -> None:
+    """
+    Conversation's entry point
+    """
     try:
-        user_name = message.from_user.full_name
-        logger.info(f"Пользователь {user_name} ({message.from_user.id}) запустил бота")
+        user_id = message.from_user.id
+        if user_id not in user_settings:
+            user_settings[user_id] = UserSettings()
+        
+        user_lang = user_settings[user_id].language
+        welcome_text = (
+            "👋 Welcome to Calendar Bot!\nChoose a calendar type:" if user_lang == 'en'
+            else "👋 Добро пожаловать в Календарь Бот!\nВыберите тип календаря:"
+        )
         
         await message.answer(
-            f"👋 Привет, {hbold(user_name)}!\n\n"
-            f"🤖 Я бот-календарь, который поможет тебе выбрать нужную дату.\n\n"
-            f"✨ У меня есть несколько типов календарей:\n"
-            f"📅 Простой - для быстрого выбора даты\n"
-            f"📆 Расширенный - с выбором месяца\n"
-            f"🗓 Диалоговый - пошаговый выбор\n"
-            f"⚡️ Быстрые даты - для частых вариантов\n\n"
-            f"❔ Используйте /help для получения справки\n"
-            f"⚙️ Используйте /settings для настройки бота\n\n"
-            f"🎯 Выберите удобный для вас тип календаря:",
-            reply_markup=start_kb
+            welcome_text,
+            reply_markup=CalendarKeyboards.get_start_keyboard(user_lang)
         )
     except Exception as e:
-        logger.error(f"Ошибка в обработчике /start: {e}")
-        await message.answer("❌ Произошла ошибка. Пожалуйста, попробуйте позже.")
+        logger.error(f"Ошибка в команде /start: {e}")
+        error_text = (
+            "❌ An error occurred. Please try again later." if user_lang == 'en'
+            else "❌ Произошла ошибка. Пожалуйста, попробуйте позже."
+        )
+        await message.answer(error_text)
 
 @dp.message(Command("help"))
 async def command_help_handler(message: Message) -> None:
     """Обработчик команды /help"""
     try:
-        await message.answer(
-            "📚 Справка по использованию бота:\n\n"
-            "🔹 /start - Запуск бота и показ главного меню\n"
-            "🔹 /help - Показ этой справки\n"
-            "🔹 /settings - Настройки бота\n\n"
-            "📅 Типы календарей:\n"
-            "1️⃣ Простой календарь - выбор даты в один клик\n"
-            "2️⃣ Расширенный календарь - с навигацией по месяцам\n"
-            "3️⃣ Диалоговый календарь - пошаговый выбор\n"
-            "4️⃣ Быстрые даты - популярные варианты\n\n"
-            "⚙️ В настройках вы можете:\n"
-            "- Изменить формат отображения даты\n"
-            "- Выбрать язык интерфейса\n\n"
-            "❓ Если у вас возникли вопросы или проблемы,\n"
-            "пожалуйста, свяжитесь с поддержкой"
-        )
+        user_id = message.from_user.id
+        if user_id not in user_settings:
+            user_settings[user_id] = UserSettings()
+        
+        user_lang = user_settings[user_id].language
+        
+        if user_lang == 'en':
+            help_text = (
+                "📚 Help for using the bot:\n\n"
+                "🔹 /start - Start the bot and show the main menu\n"
+                "🔹 /help - Show this help\n"
+                "🔹 /settings - Bot settings\n\n"
+                "📅 Calendar types:\n"
+                "1️⃣ Simple calendar - choose a date in one click\n"
+                "2️⃣ Extended calendar - with month navigation\n"
+                "3️⃣ Dialog calendar - step-by-step selection\n"
+                "4️⃣ Quick dates - popular options\n\n"
+                "⚙️ In the settings, you can:\n"
+                "- Change the date format\n"
+                "- Choose the interface language\n\n"
+                "❓ If you have any questions or problems,\n"
+                "please contact support"
+            )
+        else:
+            help_text = (
+                "📚 Справка по использованию бота:\n\n"
+                "🔹 /start - Запустить бота и показать главное меню\n"
+                "🔹 /help - Показать эту справку\n"
+                "🔹 /settings - Настройки бота\n\n"
+                "📅 Типы календарей:\n"
+                "1️⃣ Простой календарь - выбор даты в один клик\n"
+                "2️⃣ Расширенный календарь - с навигацией по месяцам\n"
+                "3️⃣ Диалоговый календарь - пошаговый выбор\n"
+                "4️⃣ Быстрые даты - популярные варианты\n\n"
+                "⚙️ В настройках вы можете:\n"
+                "- Изменить формат отображения даты\n"
+                "- Выбрать язык интерфейса\n\n"
+                "❓ Если у вас возникли вопросы или проблемы,\n"
+                "пожалуйста, свяжитесь с поддержкой"
+            )
+        
+        await message.answer(help_text)
     except Exception as e:
         logger.error(f"Ошибка в обработчике /help: {e}")
         await message.answer("❌ Произошла ошибка. Пожалуйста, попробуйте позже.")
@@ -245,54 +393,84 @@ async def command_help_handler(message: Message) -> None:
 async def command_settings_handler(message: Message) -> None:
     """Обработчик команды /settings"""
     try:
+        user_id = message.from_user.id
+        if user_id not in user_settings:
+            user_settings[user_id] = UserSettings()
+        
+        user_lang = user_settings[user_id].language
+        
+        if user_lang == 'en':
+            settings_text = (
+                "⚙️ Bot settings\n\n"
+                "Choose what you want to set:"
+            )
+        else:
+            settings_text = (
+                "⚙️ Настройки бота\n\n"
+                "Выберите, что хотите настроить:"
+            )
+        
         await message.answer(
-            "⚙️ Настройки бота\n\n"
-            "Выберите, что хотите настроить:",
-            reply_markup=UserSettings.get_settings_keyboard()
+            settings_text,
+            reply_markup=user_settings[user_id].get_settings_keyboard()
         )
     except Exception as e:
         logger.error(f"Ошибка в обработчике /settings: {e}")
         await message.answer("❌ Произошла ошибка. Пожалуйста, попробуйте позже.")
 
-@dp.message(F.text == "⚙️ Настройки")
+@dp.message(F.text.in_(["⚙️ Settings", "⚙️ Настройки"]))
 async def settings_handler(message: Message) -> None:
     """Обработчик кнопки настроек в главном меню"""
     try:
+        user_id = message.from_user.id
+        if user_id not in user_settings:
+            user_settings[user_id] = UserSettings()
+        
+        user_lang = user_settings[user_id].language
+        settings_text = (
+            "⚙️ Bot Settings\n\nChoose what you want to configure:" if user_lang == 'en'
+            else "⚙️ Настройки бота\n\nВыберите, что хотите настроить:"
+        )
+        
         await message.answer(
-            "⚙️ Настройки бота\n\n"
-            "Выберите, что хотите настроить:",
-            reply_markup=UserSettings.get_settings_keyboard()
+            settings_text,
+            reply_markup=user_settings[user_id].get_settings_keyboard()
         )
     except Exception as e:
         logger.error(f"Ошибка в обработчике настроек: {e}")
-        await message.answer("❌ Произошла ошибка. Пожалуйста, попробуйте позже.")
+        error_text = (
+            "❌ An error occurred. Please try again later." if user_lang == 'en'
+            else "❌ Произошла ошибка. Пожалуйста, попробуйте позже."
+        )
+        await message.answer(error_text)
 
-@dp.message(F.text == "⚡️ Быстрые даты")
+@dp.message(F.text.in_(["⚡️ Quick Dates", "⚡️ Быстрые даты"]))
 async def quick_dates_handler(message: Message) -> None:
-    """
-    Обработчик быстрых дат
-    
-    Показывает меню быстрого выбора дат с различными вариантами:
-    - Сегодня/Завтра
-    - Через неделю/две недели
-    - Через месяц/три месяца
-    - Начало/конец текущего месяца
-    """
+    """Обработчик кнопки быстрых дат"""
     try:
+        user_id = message.from_user.id
+        if user_id not in user_settings:
+            user_settings[user_id] = UserSettings()
+        
+        user_lang = user_settings[user_id].language
+        quick_dates_text = (
+            "⚡️ Quick Dates\nChoose a date:" if user_lang == 'en'
+            else "⚡️ Быстрые даты\nВыберите дату:"
+        )
+        
         await message.answer(
-            "⚡️ Быстрый выбор даты\n\n"
-            "📍 Выберите один из вариантов:\n\n"
-            "• Сегодня/Завтра - для ближайших дат\n"
-            "• Через неделю/две - для планирования на недели\n"
-            "• Через месяц/три - для долгосрочного планирования\n"
-            "• Начало/конец месяца - для работы с границами месяца",
-            reply_markup=quick_dates_kb
+            quick_dates_text,
+            reply_markup=CalendarKeyboards.get_quick_dates_keyboard(user_lang)
         )
     except Exception as e:
         logger.error(f"Ошибка в обработчике быстрых дат: {e}")
-        await message.answer("❌ Произошла ошибка. Пожалуйста, попробуйте позже.")
+        error_text = (
+            "❌ An error occurred. Please try again later." if user_lang == 'en'
+            else "❌ Произошла ошибка. Пожалуйста, попробуйте позже."
+        )
+        await message.answer(error_text)
 
-@dp.message(F.text == "📌 Сегодня")
+@dp.message(F.text == "📌 Today", F.text == "📌 Сегодня")
 async def today_handler(message: Message) -> None:
     """Обработчик выбора сегодняшней даты"""
     try:
@@ -300,13 +478,13 @@ async def today_handler(message: Message) -> None:
         await message.answer(
             f"✅ Выбрана дата:\n\n{QuickDates.get_date_description(today)}\n\n"
             f"📝 Можете выбрать другую дату или вернуться в главное меню",
-            reply_markup=quick_dates_kb
+            reply_markup=CalendarKeyboards.get_quick_dates_keyboard()
         )
     except Exception as e:
         logger.error(f"Ошибка в обработчике сегодняшней даты: {e}")
         await message.answer("❌ Произошла ошибка. Пожалуйста, попробуйте позже.")
 
-@dp.message(F.text == "📌 Завтра")
+@dp.message(F.text == "📌 Tomorrow", F.text == "📌 Завтра")
 async def tomorrow_handler(message: Message) -> None:
     """Обработчик выбора завтрашней даты"""
     try:
@@ -314,13 +492,13 @@ async def tomorrow_handler(message: Message) -> None:
         await message.answer(
             f"✅ Выбрана дата:\n\n{QuickDates.get_date_description(tomorrow)}\n\n"
             f"📝 Можете выбрать другую дату или вернуться в главное меню",
-            reply_markup=quick_dates_kb
+            reply_markup=CalendarKeyboards.get_quick_dates_keyboard()
         )
     except Exception as e:
         logger.error(f"Ошибка в обработчике завтрашней даты: {e}")
         await message.answer("❌ Произошла ошибка. Пожалуйста, попробуйте позже.")
 
-@dp.message(F.text == "📌 Через неделю")
+@dp.message(F.text == "📌 Next Week", F.text == "📌 Через неделю")
 async def next_week_handler(message: Message) -> None:
     """Обработчик выбора даты через неделю"""
     try:
@@ -328,13 +506,13 @@ async def next_week_handler(message: Message) -> None:
         await message.answer(
             f"✅ Выбрана дата:\n\n{QuickDates.get_date_description(next_week)}\n\n"
             f"📝 Можете выбрать другую дату или вернуться в главное меню",
-            reply_markup=quick_dates_kb
+            reply_markup=CalendarKeyboards.get_quick_dates_keyboard()
         )
     except Exception as e:
         logger.error(f"Ошибка в обработчике даты через неделю: {e}")
         await message.answer("❌ Произошла ошибка. Пожалуйста, попробуйте позже.")
 
-@dp.message(F.text == "📌 Через 2 недели")
+@dp.message(F.text == "📌 In 2 Weeks", F.text == "📌 Через 2 недели")
 async def two_weeks_handler(message: Message) -> None:
     """Обработчик выбора даты через 2 недели"""
     try:
@@ -342,13 +520,13 @@ async def two_weeks_handler(message: Message) -> None:
         await message.answer(
             f"✅ Выбрана дата:\n\n{QuickDates.get_date_description(two_weeks)}\n\n"
             f"📝 Можете выбрать другую дату или вернуться в главное меню",
-            reply_markup=quick_dates_kb
+            reply_markup=CalendarKeyboards.get_quick_dates_keyboard()
         )
     except Exception as e:
         logger.error(f"Ошибка в обработчике даты через 2 недели: {e}")
         await message.answer("❌ Произошла ошибка. Пожалуйста, попробуйте позже.")
 
-@dp.message(F.text == "📌 Через месяц")
+@dp.message(F.text == "📌 Next Month", F.text == "📌 Через месяц")
 async def next_month_handler(message: Message) -> None:
     """Обработчик выбора даты через месяц"""
     try:
@@ -356,13 +534,13 @@ async def next_month_handler(message: Message) -> None:
         await message.answer(
             f"✅ Выбрана дата:\n\n{QuickDates.get_date_description(next_month)}\n\n"
             f"📝 Можете выбрать другую дату или вернуться в главное меню",
-            reply_markup=quick_dates_kb
+            reply_markup=CalendarKeyboards.get_quick_dates_keyboard()
         )
     except Exception as e:
         logger.error(f"Ошибка в обработчике даты через месяц: {e}")
         await message.answer("❌ Произошла ошибка. Пожалуйста, попробуйте позже.")
 
-@dp.message(F.text == "📌 Через 3 месяца")
+@dp.message(F.text == "📌 In 3 Months", F.text == "📌 Через 3 месяца")
 async def three_months_handler(message: Message) -> None:
     """Обработчик выбора даты через 3 месяца"""
     try:
@@ -370,13 +548,13 @@ async def three_months_handler(message: Message) -> None:
         await message.answer(
             f"✅ Выбрана дата:\n\n{QuickDates.get_date_description(three_months)}\n\n"
             f"📝 Можете выбрать другую дату или вернуться в главное меню",
-            reply_markup=quick_dates_kb
+            reply_markup=CalendarKeyboards.get_quick_dates_keyboard()
         )
     except Exception as e:
         logger.error(f"Ошибка в обработчике даты через 3 месяца: {e}")
         await message.answer("❌ Произошла ошибка. Пожалуйста, попробуйте позже.")
 
-@dp.message(F.text == "📌 Начало месяца")
+@dp.message(F.text == "📌 Start of Month", F.text == "📌 Начало месяца")
 async def start_of_month_handler(message: Message) -> None:
     """Обработчик выбора начала текущего месяца"""
     try:
@@ -385,13 +563,13 @@ async def start_of_month_handler(message: Message) -> None:
         await message.answer(
             f"✅ Выбрана дата:\n\n{QuickDates.get_date_description(start_of_month)}\n\n"
             f"📝 Можете выбрать другую дату или вернуться в главное меню",
-            reply_markup=quick_dates_kb
+            reply_markup=CalendarKeyboards.get_quick_dates_keyboard()
         )
     except Exception as e:
         logger.error(f"Ошибка в обработчике начала месяца: {e}")
         await message.answer("❌ Произошла ошибка. Пожалуйста, попробуйте позже.")
 
-@dp.message(F.text == "📌 Конец месяца")
+@dp.message(F.text == "📌 End of Month", F.text == "📌 Конец месяца")
 async def end_of_month_handler(message: Message) -> None:
     """Обработчик выбора конца текущего месяца"""
     try:
@@ -405,98 +583,218 @@ async def end_of_month_handler(message: Message) -> None:
         await message.answer(
             f"✅ Выбрана дата:\n\n{QuickDates.get_date_description(last_day)}\n\n"
             f"📝 Можете выбрать другую дату или вернуться в главное меню",
-            reply_markup=quick_dates_kb
+            reply_markup=CalendarKeyboards.get_quick_dates_keyboard()
         )
     except Exception as e:
         logger.error(f"Ошибка в обработчике конца месяца: {e}")
         await message.answer("❌ Произошла ошибка. Пожалуйста, попробуйте позже.")
 
-@dp.message(F.text == "🔙 Вернуться в главное меню")
-async def back_to_main_handler(message: Message) -> None:
+@dp.message(F.text.in_(["🔙 Back to Main Menu", "🔙 Вернуться в главное меню"]))
+async def back_to_main_menu(message: Message) -> None:
     """Обработчик возврата в главное меню"""
     try:
+        user_id = message.from_user.id
+        if user_id not in user_settings:
+            user_settings[user_id] = UserSettings()
+        
+        user_lang = user_settings[user_id].language
+        main_menu_text = (
+            "🏠 Main Menu\nChoose a calendar type:" if user_lang == 'en'
+            else "🏠 Главное меню\nВыберите тип календаря:"
+        )
+        
         await message.answer(
-            "🏠 Главное меню\n"
-            "Выберите тип календаря:",
-            reply_markup=start_kb
+            main_menu_text,
+            reply_markup=CalendarKeyboards.get_start_keyboard(user_lang)
         )
     except Exception as e:
-        logger.error(f"Ошибка в обработчике возврата в главное меню: {e}")
-        await message.answer("❌ Произошла ошибка. Пожалуйста, попробуйте позже.")
+        logger.error(f"Ошибка при возврате в главное меню: {e}")
+        error_text = (
+            "❌ An error occurred. Please try again later." if user_lang == 'en'
+            else "❌ Произошла ошибка. Пожалуйста, попробуйте позже."
+        )
+        await message.answer(error_text)
 
-@dp.callback_query(F.data == "settings_language")
-async def process_language_setting(callback_query: CallbackQuery) -> None:
-    """Обработчик настройки языка"""
+@dp.callback_query(F.data == "change_language")
+async def change_language_handler(callback_query: CallbackQuery):
+    """Обработчик кнопки изменения языка"""
     try:
+        user_id = callback_query.from_user.id
+        if user_id not in user_settings:
+            user_settings[user_id] = UserSettings()
+        
+        user_lang = user_settings[user_id].language
+        language_text = (
+            "Select language:" if user_lang == 'en'
+            else "Выберите язык:"
+        )
+        
         await callback_query.message.edit_text(
-            "🌍 Выбор языка\n\n"
-            "🚧 Эта функция находится в разработке.\n"
-            "В данный момент доступен только русский язык."
+            language_text,
+            reply_markup=UserSettings.get_language_keyboard()
         )
     except Exception as e:
-        logger.error(f"Ошибка в обработчике настройки языка: {e}")
-        await callback_query.message.answer("❌ Произошла ошибка. Пожалуйста, попробуйте позже.")
+        logger.error(f"Ошибка при открытии меню выбора языка: {e}")
+        error_text = (
+            "❌ An error occurred. Please try again later." if user_lang == 'en'
+            else "❌ Произошла ошибка. Пожалуйста, попробуйте позже."
+        )
+        await callback_query.message.answer(error_text)
 
-@dp.callback_query(F.data == "settings_date_format")
-async def process_date_format_setting(callback_query: CallbackQuery) -> None:
-    """Обработчик настройки формата даты"""
+@dp.callback_query(F.data.startswith("lang_"))
+async def process_language_selection(callback_query: CallbackQuery):
+    """Обработчик выбора языка"""
     try:
+        user_id = callback_query.from_user.id
+        new_lang = callback_query.data.split('_')[1]
+        
+        if user_id not in user_settings:
+            user_settings[user_id] = UserSettings()
+        
+        old_lang = user_settings[user_id].language
+        user_settings[user_id].language = new_lang
+        
+        # Определяем текст в зависимости от нового языка
+        success_text = (
+            "✅ Language changed successfully!" if new_lang == 'en'
+            else "✅ Язык успешно изменен!"
+        )
+        
+        # Обновляем сообщение с настройками
         await callback_query.message.edit_text(
-            "📅 Выберите формат даты:",
-            reply_markup=UserSettings.get_date_format_keyboard()
+            success_text,
+            reply_markup=user_settings[user_id].get_settings_keyboard()
+        )
+        
+        # Отправляем новое главное меню с обновленным языком
+        main_menu_text = (
+            "🏠 Main Menu\nChoose a calendar type:" if new_lang == 'en'
+            else "🏠 Главное меню\nВыберите тип календаря:"
+        )
+        
+        # Отправляем новую клавиатуру с правильным языком
+        await callback_query.message.answer(
+            main_menu_text,
+            reply_markup=CalendarKeyboards.get_start_keyboard(new_lang)
+        )
+        
+    except Exception as e:
+        logger.error(f"Ошибка при смене языка: {e}")
+        error_text = (
+            "❌ An error occurred. Please try again later." if new_lang == 'en'
+            else "❌ Произошла ошибка. Пожалуйста, попробуйте позже."
+        )
+        await callback_query.message.answer(error_text)
+
+@dp.callback_query(F.data == "change_date_format")
+async def change_date_format_handler(callback_query: CallbackQuery):
+    """Обработчик кнопки изменения формата даты"""
+    try:
+        user_id = callback_query.from_user.id
+        if user_id not in user_settings:
+            user_settings[user_id] = UserSettings()
+        
+        user_lang = user_settings[user_id].language
+        format_text = (
+            "Select date format:" if user_lang == 'en'
+            else "Выберите формат даты:"
+        )
+        
+        await callback_query.message.edit_text(
+            format_text,
+            reply_markup=user_settings[user_id].get_date_format_keyboard()
         )
     except Exception as e:
-        logger.error(f"Ошибка в обработчике настройки формата даты: {e}")
-        await callback_query.message.answer("❌ Произошла ошибка. Пожалуйста, попробуйте позже.")
+        logger.error(f"Ошибка при открытии меню формата даты: {e}")
+        error_text = (
+            "❌ An error occurred. Please try again later." if user_lang == 'en'
+            else "❌ Произошла ошибка. Пожалуйста, попробуйте позже."
+        )
+        await callback_query.message.answer(error_text)
+
+@dp.callback_query(F.data.startswith("date_format_"))
+async def process_date_format_selection(callback_query: CallbackQuery):
+    """Обработчик выбора формата даты"""
+    try:
+        user_id = callback_query.from_user.id
+        if user_id not in user_settings:
+            user_settings[user_id] = UserSettings()
+        
+        new_format = callback_query.data.replace("date_format_", "")
+        user_settings[user_id].date_format = new_format
+        
+        user_lang = user_settings[user_id].language
+        success_text = (
+            "✅ Date format changed successfully!" if user_lang == 'en'
+            else "✅ Формат даты успешно изменен!"
+        )
+        
+        await callback_query.message.edit_text(
+            success_text,
+            reply_markup=user_settings[user_id].get_settings_keyboard()
+        )
+    except Exception as e:
+        logger.error(f"Ошибка при выборе формата даты: {e}")
+        error_text = (
+            "❌ An error occurred. Please try again later." if user_lang == 'en'
+            else "❌ Произошла ошибка. Пожалуйста, попробуйте позже."
+        )
+        await callback_query.message.answer(error_text)
 
 @dp.callback_query(F.data == "back_to_main")
-async def process_back_to_main(callback_query: CallbackQuery) -> None:
+async def process_back_to_main(callback_query: CallbackQuery):
     """Обработчик возврата в главное меню из настроек"""
     try:
+        user_id = callback_query.from_user.id
+        if user_id not in user_settings:
+            user_settings[user_id] = UserSettings()
+        
+        user_lang = user_settings[user_id].language
+        main_menu_text = (
+            "🏠 Main Menu\nChoose a calendar type:" if user_lang == 'en'
+            else "🏠 Главное меню\nВыберите тип календаря:"
+        )
+        
         await callback_query.message.answer(
-            "🏠 Главное меню\n"
-            "Выберите тип календаря:",
-            reply_markup=start_kb
+            main_menu_text,
+            reply_markup=CalendarKeyboards.get_start_keyboard(user_lang)
         )
         await callback_query.message.delete()
     except Exception as e:
         logger.error(f"Ошибка при возврате в главное меню: {e}")
-        await callback_query.message.answer("❌ Произошла ошибка. Пожалуйста, попробуйте позже.")
+        error_text = (
+            "❌ An error occurred. Please try again later." if user_lang == 'en'
+            else "❌ Произошла ошибка. Пожалуйста, попробуйте позже."
+        )
+        await callback_query.message.answer(error_text)
 
 @dp.callback_query(F.data == "back_to_settings")
-async def process_back_to_settings(callback_query: CallbackQuery) -> None:
+async def process_back_to_settings(callback_query: CallbackQuery):
     """Обработчик возврата в меню настроек"""
     try:
+        user_id = callback_query.from_user.id
+        if user_id not in user_settings:
+            user_settings[user_id] = UserSettings()
+        
+        user_lang = user_settings[user_id].language
+        settings_text = (
+            "⚙️ Bot Settings\n\nChoose what you want to configure:" if user_lang == 'en'
+            else "⚙️ Настройки бота\n\nВыберите, что хотите настроить:"
+        )
+        
         await callback_query.message.edit_text(
-            "⚙️ Настройки бота\n\n"
-            "Выберите, что хотите настроить:",
-            reply_markup=UserSettings.get_settings_keyboard()
+            settings_text,
+            reply_markup=user_settings[user_id].get_settings_keyboard()
         )
     except Exception as e:
         logger.error(f"Ошибка при возврате в настройки: {e}")
-        await callback_query.message.answer("❌ Произошла ошибка. Пожалуйста, попробуйте позже.")
-
-@dp.callback_query(F.data.startswith("date_format_"))
-async def process_date_format_selection(callback_query: CallbackQuery) -> None:
-    """Обработчик выбора формата даты"""
-    try:
-        format_type = callback_query.data.replace("date_format_", "")
-        format_display = {
-            "dd.mm.yyyy": "DD.MM.YYYY",
-            "yyyy-mm-dd": "YYYY-MM-DD",
-            "mm/dd/yyyy": "MM/DD/YYYY"
-        }.get(format_type, "DD.MM.YYYY")
-        
-        await callback_query.message.edit_text(
-            f"✅ Формат даты изменен на: {format_display}\n"
-            f"Теперь даты будут отображаться в этом формате.",
-            reply_markup=UserSettings.get_settings_keyboard()
+        error_text = (
+            "❌ An error occurred. Please try again later." if user_lang == 'en'
+            else "❌ Произошла ошибка. Пожалуйста, попробуйте позже."
         )
-    except Exception as e:
-        logger.error(f"Ошибка при выборе формата даты: {e}")
-        await callback_query.message.answer("❌ Произошла ошибка. Пожалуйста, попробуйте позже.")
+        await callback_query.message.answer(error_text)
 
-@dp.message(F.text == "📅 Простой календарь")
+@dp.message(F.text == "📅 Simple Calendar", F.text == "📅 Простой календарь")
 async def nav_cal_handler(message: Message) -> None:
     """
     Обработчик для простого календаря
@@ -505,16 +803,19 @@ async def nav_cal_handler(message: Message) -> None:
         message (Message): Входящее сообщение
     """
     try:
-        logger.info(f"Пользователь {message.from_user.id} открыл простой календарь")
+        user_id = message.from_user.id
+        user_lang = user_settings.get(user_id, UserSettings()).language
+        
+        calendar = SimpleCalendar(locale=user_lang)
         await message.answer(
-            "📅 Выберите дату в календаре: ",
-            reply_markup=await SimpleCalendar().start_calendar()
+            "📅 Выберите дату:" if user_lang == 'ru' else "📆 Select a date:",
+            reply_markup=await calendar.start_calendar()
         )
     except Exception as e:
-        logger.error(f"Ошибка при создании простого календаря: {e}")
-        await message.answer("❌ Не удалось создать календарь. Попробуйте позже.")
+        logger.error(f"Ошибка в обработчике простого календаря: {e}")
+        await message.answer("❌ Произошла ошибка. Пожалуйста, попробуйте позже.")
 
-@dp.message(F.text == "📆 Расширенный календарь")
+@dp.message(F.text == "📆 Extended Calendar", F.text == "📆 Расширенный календарь")
 async def nav_cal_handler_date(message: Message) -> None:
     """
     Обработчик для календаря с выбором месяца
@@ -560,7 +861,7 @@ async def process_simple_calendar(callback_query: CallbackQuery, callback_data: 
         logger.error(f"Ошибка при обработке выбора даты: {e}")
         await callback_query.message.answer("❌ Произошла ошибка при выборе даты.")
 
-@dp.message(F.text == "🗓 Диалоговый календарь")
+@dp.message(F.text == "🗓 Dialog Calendar", F.text == "🗓 Диалоговый календарь")
 async def dialog_cal_handler(message: Message) -> None:
     """
     Обработчик для диалогового календаря
@@ -569,19 +870,19 @@ async def dialog_cal_handler(message: Message) -> None:
         message (Message): Входящее сообщение
     """
     try:
-        logger.info(f"Пользователь {message.from_user.id} открыл диалоговый календарь")
+        user_id = message.from_user.id
+        user_lang = user_settings.get(user_id, UserSettings()).language
+        
+        calendar = DialogCalendar(locale=user_lang)
         await message.answer(
-            "🗓 Выберите дату пошагово:\n"
-            "1️⃣ Сначала выберите год\n"
-            "2️⃣ Затем месяц\n"
-            "3️⃣ И наконец день",
-            reply_markup=await DialogCalendar().start_calendar()
+            "📆 Выберите дату:" if user_lang == 'ru' else "📆 Select a date:",
+            reply_markup=await calendar.start_calendar()
         )
     except Exception as e:
-        logger.error(f"Ошибка при создании диалогового календаря: {e}")
+        logger.error(f"Ошибка в обработчике диалогового календаря: {e}")
         await message.answer("❌ Не удалось создать календарь. Попробуйте позже.")
 
-@dp.message(F.text == "📊 Календарь с годом")
+@dp.message(F.text == "📊 Calendar with Year", F.text == "📊 Календарь с годом")
 async def dialog_cal_handler_year(message: Message) -> None:
     """
     Обработчик для диалогового календаря с указанным годом
@@ -602,7 +903,7 @@ async def dialog_cal_handler_year(message: Message) -> None:
         logger.error(f"Ошибка при создании диалогового календаря с годом: {e}")
         await message.answer("❌ Не удалось создать календарь. Попробуйте позже.")
 
-@dp.message(F.text == "📋 Календарь с месяцем")
+@dp.message(F.text == "📋 Calendar with Month", F.text == "📋 Календарь с месяцем")
 async def dialog_cal_handler_month(message: Message) -> None:
     """
     Обработчик для диалогового календаря с указанным месяцем
